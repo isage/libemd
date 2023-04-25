@@ -16,5 +16,15 @@ add_executable(dumpemd
   src/example/main.c
 )
 
+add_executable(vita-libs-gen-emd
+  src/vita-libs-gen-emd/sha1.c
+  src/vita-libs-gen-emd/vita-import.c
+  src/vita-libs-gen-emd/vita-import-emd-parse.c
+  src/vita-libs-gen-emd/vita-libs-gen-emd.c
+)
+
 target_include_directories(dumpemd PRIVATE "src/")
 target_link_libraries(dumpemd emd)
+
+target_include_directories(vita-libs-gen-emd PRIVATE "src/")
+target_link_libraries(vita-libs-gen-emd emd)
