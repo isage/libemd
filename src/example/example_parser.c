@@ -158,7 +158,8 @@ int libfunc_def(emd_parse_args *args)
   funcname = emd_token_get_string(args->main_value[1]);
   fprintf(stderr, "lib name %s\n", libname);
   fprintf(stderr, "func name %s\n", funcname);
-  fprintf(stderr, "func nid 0x%08x\n", emd_token_get_integer(args->opt_value[4]));
+  if (args->opt_value[4])
+    fprintf(stderr, "func nid 0x%08x\n", emd_token_get_integer(args->opt_value[4]));
 
   return 1;
 }
@@ -172,7 +173,8 @@ int libvar_def(emd_parse_args *args)
   varname = emd_token_get_string(args->main_value[1]);
   fprintf(stderr, "lib name %s\n", libname);
   fprintf(stderr, "var name %s\n", varname);
-  fprintf(stderr, "var nid 0x%08x\n", emd_token_get_integer(args->opt_value[4]));
+  if (args->opt_value[4])
+    fprintf(stderr, "var nid 0x%08x\n", emd_token_get_integer(args->opt_value[4]));
 
   return 1;
 }
