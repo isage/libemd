@@ -1,3 +1,4 @@
+#include "cpp_token_read.h"
 #include "emd_token_read.h"
 
 #include <stdlib.h>
@@ -327,7 +328,7 @@ Emd_token_buffer *read_emd_token_from_buffer(char *strbuf, size_t strsize)
   Emd_token_buffer *et_buf;
   Cpp_token_buffer *ct_buf;
 
-  et_buf       = (Emd_token_buffer *)calloc(1, 8);
+  et_buf       = (Emd_token_buffer *)calloc(1, sizeof(Emd_token_buffer));
   ct_buf       = read_cpp_token_from_buffer(strbuf, strsize);
   et_buf->cbuf = ct_buf;
   if (ct_buf != NULL)
