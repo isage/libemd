@@ -23,7 +23,7 @@ void usage();
 char *hextostr(int x)
 {
   static char buf[20];
-  sprintf(buf, "0x%x", x);
+  sprintf(buf, "0x%08x", x);
   return buf;
 }
 
