@@ -28,6 +28,14 @@ add_executable(vita-libs-gen-emd
   src/vita-libs-gen-emd/vita-libs-gen-emd.c
 )
 
+add_executable(vita-emd-to-yaml
+  src/vita-emd-to-yaml/yamlemitter.c
+  src/vita-emd-to-yaml/sha1.c
+  src/vita-emd-to-yaml/vita-import.c
+  src/vita-emd-to-yaml/vita-import-emd-parse.c
+  src/vita-emd-to-yaml/vita-emd-to-yaml.c
+)
+
 target_include_directories(dumpemd PRIVATE "src/")
 target_link_libraries(dumpemd emd)
 
@@ -36,3 +44,6 @@ target_link_libraries(emitter emd)
 
 target_include_directories(vita-libs-gen-emd PRIVATE "src/")
 target_link_libraries(vita-libs-gen-emd emd)
+
+target_include_directories(vita-emd-to-yaml PRIVATE "src/")
+target_link_libraries(vita-emd-to-yaml emd yaml)
