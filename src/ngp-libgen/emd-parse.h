@@ -19,7 +19,6 @@ struct ngpImportsLib
     std::string nidsuffix;
     std::string stubname;
     uint32_t NID = 0;
-    bool is_kernel;
     std::vector<ngpImportsStub*> functions;
     std::vector<ngpImportsStub*> variables;
     uint32_t flags = 0;

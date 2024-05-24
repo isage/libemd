@@ -119,11 +119,6 @@ int libattr_def(emd_parse_args *args)
     {
       attr = 0x4000;
     }
-    else if (strcmp(str_attr, "kernel") == 0)
-    {
-      ngpImportsLib* lib = add_or_find_library(libname);
-      lib->is_kernel = 1;
-    }
     else
     {
       char *str = emd_token_get_string(args->main_value[1]);
