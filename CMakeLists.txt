@@ -24,9 +24,9 @@ add_executable(emitter
 find_package(fmt)
 
 add_executable(ngp-libgen
-  src/vita-libs-gen-emd/sha1.c
-  src/vita-libs-gen-emd/emd-parse.cpp
-  src/vita-libs-gen-emd/main.cpp
+  src/ngp-libgen/sha1.c
+  src/ngp-libgen/emd-parse.cpp
+  src/ngp-libgen/main.cpp
 )
 
 add_executable(vita-emd-to-yaml
