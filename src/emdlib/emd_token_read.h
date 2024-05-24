@@ -3,6 +3,10 @@
 #include "emd_token.h"
 #include <stdio.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 typedef int (*traverse_emd_func)(Emd_token **, void *);
 
 const char *emd_token_code_namestr(TokenCode token);
@@ -20,5 +24,9 @@ void free_emd_token_buffer(Emd_token_buffer *buf);
 Emd_token_buffer *read_emd_token_from_buffer(char *strbuf, size_t strsize);
 Emd_token_buffer *read_emd_token_from_file(const char *filename);
 int traverse_emd_tokens(Emd_token_buffer *buf, traverse_emd_func func, void *opt);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

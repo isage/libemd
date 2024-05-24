@@ -267,7 +267,7 @@ void get_cpp_token(char *src, size_t *length, Cpp_token *token)
   {
     if (src[1] != '\\')
     {
-      token->v.value = (uint)(uint8_t)src[1];
+      token->v.value = (uint32_t)(uint8_t)src[1];
       ptr            = src + 2;
 
       if (*ptr == '\'')
@@ -375,7 +375,7 @@ void get_cpp_token(char *src, size_t *length, Cpp_token *token)
         }
         while (1)
         {
-          val = (uint)ptr_inner[1];
+          val = (uint32_t)ptr_inner[1];
           ptr = ptr_inner + 1;
           ch2 = val - 0x30;
           if (((9 < ch2) && (5 < val - 0x61)) && (5 < val - 0x41))

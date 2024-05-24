@@ -29,6 +29,10 @@ typedef struct masterkey_table
   struct emd_parse_table *table_top;
 } masterkey_table;
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 int ck_symbolstring(Emd_token *token);
 int ck_string(Emd_token *token);
 int ck_symbolinteger(Emd_token *token);
@@ -39,5 +43,9 @@ int ck_bindgw(Emd_token *token);
 void build_masterkey_table(emd_parse_table *parse_table, size_t table_size);
 void free_masterkey_table(void);
 int scan_emd_entries(Emd_token_buffer *emdbuf, emd_parse_table *parse_table, size_t table_size);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

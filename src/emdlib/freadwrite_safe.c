@@ -1,4 +1,5 @@
 #include "freadwrite_safe.h"
+#include <stdint.h>
 
 static int envset         = 0;
 static int verbose        = 0;
@@ -27,9 +28,9 @@ size_t fread_file(void *ptr, size_t size, size_t nitems, FILE *stream, int *errf
   void *_DstBuf;
 
   size_t read_bytes;
-  uint left;
-  uint count;
-  uint read;
+  uint32_t left;
+  uint32_t count;
+  uint32_t read;
   int tries;
 
   if (envset == 0)
@@ -76,7 +77,7 @@ size_t fread_file(void *ptr, size_t size, size_t nitems, FILE *stream, int *errf
           *errflag = 1;
           break;
         }
-        tries = tries + (uint)(read_bytes == 0);
+        tries = tries + (uint32_t)(read_bytes == 0);
         if (10000 < tries)
         {
           *errflag = 1;

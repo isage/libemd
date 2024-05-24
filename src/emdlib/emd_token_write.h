@@ -9,6 +9,10 @@ typedef struct Emd_token_list {
     struct Emd_token* tokenlist;
 } Emd_token_list;
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 Emd_token_list* start_emd_token_list();
 void free_emd_list(Emd_token_list* list);
 
@@ -35,5 +39,9 @@ void add_library_function(Emd_token_list* list, const char* libname, const char*
 
 void write_emd_list(Emd_token_list* list);
 void write_emd_list_to_fp(FILE* fp, Emd_token_list* list);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

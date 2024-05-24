@@ -1,51 +1,47 @@
 #include <string.h>
 #include <stdlib.h>
-#include "vita-import.h"
-#include "sha1.h"
 #include "emdlib/scanemddef.h"
-
-static vita_imports_t *imports;
+#include "emd-parse.h"
+#include "sha1.h"
 
 // helper funcs
+static ngpImports* imports;
 
-vita_imports_lib_t* add_or_find_library(const char* name)
+ngpImportsLib* add_or_find_library(const std::string& name)
 {
-    vita_imports_module_t *import;
-    if (imports->n_modules == 0)
+    ngpImportsModule *import;
+    if (imports->modules.size() == 0)
     {
-        import = vita_imports_module_new(name, 0, 0);
-        imports->modules = realloc(imports->modules, (imports->n_modules+1)*sizeof(vita_imports_module_t*));
-        imports->modules[imports->n_modules++] = import;
+        // Create module with lib name
+        import = new ngpImportsModule(name, 0, 0, 0);
+        imports->modules.push_back(import);
     }
     else
-        import = imports->modules[0];
-
-    for(int i = 0; i < import->n_libs; i++)
     {
-        if (strcmp(import->libs[i]->name, name) == 0) return import->libs[i];
+        import = imports->modules.back();
     }
-    vita_imports_lib_t *library = vita_imports_lib_new("",false,0,0,0);
-    library->name = strdup(name);
-    import->libs = realloc(import->libs, (import->n_libs+1)*sizeof(vita_imports_lib_t*));
-    import->libs[import->n_libs++] = library;
+
+    for(auto& lib: import->libs)
+    {
+        if (name.compare(lib->name) == 0) return lib;
+    }
+
+    ngpImportsLib *library = new ngpImportsLib(name);
+    import->libs.push_back(library);
+
+    return library;
 }
 
-void add_func_to_library(vita_imports_lib_t *library, const char* name, uint32_t nid)
+void add_func_to_library(ngpImportsLib *library, const std::string& name, uint32_t nid)
 {
-	vita_imports_stub_t *symbol = vita_imports_stub_new(name,0);
-	symbol->NID = nid;
-
-	library->functions = realloc(library->functions, (library->n_functions+1)*sizeof(vita_imports_stub_t*));
-	library->functions[library->n_functions++] = symbol;
+    ngpImportsStub *symbol = new ngpImportsStub(name,nid);
+    library->functions.push_back(symbol);
 }
 
-void add_var_to_library(vita_imports_lib_t *library, const char* name, uint32_t nid)
+void add_var_to_library(ngpImportsLib *library, const std::string& name, uint32_t nid)
 {
-	vita_imports_stub_t *symbol = vita_imports_stub_new(name,0);
-	symbol->NID = nid;
-
-	library->variables = realloc(library->variables, (library->n_variables+1)*sizeof(vita_imports_stub_t*));
-	library->variables[library->n_variables++] = symbol;
+    ngpImportsStub *symbol = new ngpImportsStub(name,nid);
+    library->variables.push_back(symbol);
 }
 
 // parse funcs
@@ -53,13 +49,13 @@ void add_var_to_library(vita_imports_lib_t *library, const char* name, uint32_t 
 int emd_def(emd_parse_args *args)
 {
   uint64_t val = emd_token_get_integer(args->main_value[0]);
-  if (val != 1)
+  if (val != 1 && val != 2)
   {
     fprintf(stderr, "%s: unsupported emd version %d.\n > ", "", (uint32_t)val);
     dump_emd_token_list(stderr, args->inlist);
   }
 
-  return (val == 1);
+  return (val == 1 || val == 2);
 }
 
 int modinfo_format(emd_parse_args *args)
@@ -123,6 +119,11 @@ int libattr_def(emd_parse_args *args)
     {
       attr = 0x4000;
     }
+    else if (strcmp(str_attr, "kernel") == 0)
+    {
+      ngpImportsLib* lib = add_or_find_library(libname);
+      lib->is_kernel = 1;
+    }
     else
     {
       char *str = emd_token_get_string(args->main_value[1]);
@@ -132,7 +133,7 @@ int libattr_def(emd_parse_args *args)
     }
   }
 
-  vita_imports_lib_t* lib = add_or_find_library(libname);
+  ngpImportsLib* lib = add_or_find_library(libname);
 
   // todo
 
@@ -147,7 +148,7 @@ int libver_def(emd_parse_args *args)
   libname = emd_token_get_string(args->main_value[0]);
   ver     = emd_token_get_integer(args->main_value[1]);
 
-  vita_imports_lib_t* lib = add_or_find_library(libname);
+  ngpImportsLib* lib = add_or_find_library(libname);
   lib->flags |= (ver << 16);
 
   return 1;
@@ -161,7 +162,7 @@ int libstub_def(emd_parse_args *args)
   libname  = emd_token_get_string(args->main_value[0]);
   stubname = emd_token_get_string(args->main_value[1]);
 
-  vita_imports_lib_t* lib = add_or_find_library(libname);
+  ngpImportsLib* lib = add_or_find_library(libname);
   lib->stubname = strdup(stubname);
 
   return 1;
@@ -185,7 +186,7 @@ int libsuf_def(emd_parse_args *args)
   libname       = emd_token_get_string(args->main_value[0]);
   nidsuffix_src = emd_token_get_string(args->main_value[1]);
 
-  vita_imports_lib_t* lib = add_or_find_library(libname);
+  ngpImportsLib* lib = add_or_find_library(libname);
   lib->nidsuffix = strdup(nidsuffix_src);
   return 1;
 }
@@ -198,7 +199,7 @@ int libnid_def(emd_parse_args *args)
   libname = emd_token_get_string(args->main_value[0]);
   libnid  = emd_token_get_integer(args->main_value[1]);
 
-  vita_imports_lib_t* lib = add_or_find_library(libname);
+  ngpImportsLib* lib = add_or_find_library(libname);
   lib->NID = libnid;
 
   return 1;
@@ -214,7 +215,7 @@ int libfunc_def(emd_parse_args *args)
 
   uint32_t func_nid = 0;
 
-  vita_imports_lib_t* lib = add_or_find_library(libname);
+  ngpImportsLib* lib = add_or_find_library(libname);
 
   if (args->opt_value[4])
   {
@@ -226,8 +227,8 @@ int libfunc_def(emd_parse_args *args)
     for (int i = 0; i < strlen(funcname); i++)
         SHA1Update(&ctx, (const uint8_t*)funcname + i, 1);
 
-    for (int i = 0; i < strlen(lib->nidsuffix); i++)
-        SHA1Update(&ctx, (const uint8_t*)lib->nidsuffix + i, 1);
+    for (int i = 0; i < lib->nidsuffix.length(); i++)
+        SHA1Update(&ctx, (const uint8_t*)lib->nidsuffix.c_str() + i, 1);
 
     uint8_t sha1[20];
     SHA1Final(sha1, &ctx);
@@ -250,7 +251,7 @@ int libvar_def(emd_parse_args *args)
 
   uint32_t var_nid = 0;
 
-  vita_imports_lib_t* lib = add_or_find_library(libname);
+  ngpImportsLib* lib = add_or_find_library(libname);
 
   if (args->opt_value[4])
   {
@@ -262,8 +263,8 @@ int libvar_def(emd_parse_args *args)
     for (int i = 0; i < strlen(varname); i++)
         SHA1Update(&ctx, (const uint8_t*)varname + i, 1);
 
-    for (int i = 0; i < strlen(lib->nidsuffix); i++)
-        SHA1Update(&ctx, (const uint8_t*)lib->nidsuffix + i, 1);
+    for (int i = 0; i < lib->nidsuffix.length(); i++)
+        SHA1Update(&ctx, (const uint8_t*)lib->nidsuffix.c_str() + i, 1);
 
     uint8_t sha1[20];
     SHA1Final(sha1, &ctx);
@@ -327,6 +328,7 @@ int stubfile_def(emd_parse_args *args)
   {
     str = emd_token_get_string(args->opt_value[0]);
   }
+  printf("%s\n", str);
   return 1;
 }
 
@@ -349,7 +351,18 @@ int module_def(emd_parse_args *args)
     val   = emd_token_get_integer(args->opt_value[1]);
     minor = val;
   }
+
+  uint32_t NID = 0;
+  if (args->opt_value[2] != NULL)
+  {
+    val   = emd_token_get_integer(args->opt_value[2]);
+    NID = val;
+  }
+
   modname = emd_token_get_string(args->main_value[0]);
+
+  ngpImportsModule *import = new ngpImportsModule(modname, NID, major, minor);
+  imports->modules.push_back(import);
 
   return 1;
 }
@@ -474,9 +487,9 @@ emd_parse_table emd_parse_table_table[PARSE_TABLE_SIZE]
         {&ck_symbol, NULL, NULL, NULL, NULL, NULL, NULL, NULL}},
        {&module_def,
         {KC_Module, KC_NULL},
-        {KC_major_version, KC_minor_version, KC_NULL, KC_NULL, KC_NULL, KC_NULL, KC_NULL, KC_NULL},
+        {KC_major_version, KC_minor_version, KC_nidvalue, KC_NULL, KC_NULL, KC_NULL, KC_NULL, KC_NULL},
         {&ck_symbol, NULL},
-        {&ck_integer, &ck_integer, NULL, NULL, NULL, NULL, NULL, NULL}},
+        {&ck_integer, &ck_integer, &ck_integer, NULL, NULL, NULL, NULL, NULL}},
        {&modattr_def,
         {KC_module_attr, KC_NULL},
         {KC_NULL, KC_NULL, KC_NULL, KC_NULL, KC_NULL, KC_NULL, KC_NULL, KC_NULL},
@@ -513,19 +526,14 @@ emd_parse_table emd_parse_table_table[PARSE_TABLE_SIZE]
         {NULL, NULL},
         {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}}};
 
-// load and parse
-void sample_parse(const char *filename)
+ngpImports *vita_imports_load(const char *filename, int verbose)
 {
-}
-
-vita_imports_t *vita_imports_load(const char *filename, int verbose)
-{
-    imports  = vita_imports_new(0);
+    imports = new ngpImports();
 
     Emd_token_buffer *buf = read_emd_token_from_file(filename);
     int res               = scan_emd_entries(buf, emd_parse_table_table, PARSE_TABLE_SIZE);
     free_emd_token_buffer(buf);
     if (res > 0 ) return NULL;
-    // todo: free
+
     return imports;
 }
