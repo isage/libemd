@@ -18,21 +18,21 @@ struct ngpImportsLib
     std::string name;
     std::string nidsuffix;
     std::string stubname;
-    uint32_t NID;
+    uint32_t NID = 0;
     bool is_kernel;
     std::vector<ngpImportsStub*> functions;
     std::vector<ngpImportsStub*> variables;
-    uint32_t flags;
+    uint32_t flags = 0;
 };
 
 struct ngpImportsModule
 {
     ngpImportsModule(std::string name, uint32_t nid, uint32_t major, uint32_t minor) : name(name), NID(nid), major(major), minor(minor) {}
     std::string name;
-    uint32_t NID;
+    uint32_t NID = 0;
     std::vector<ngpImportsLib*> libs;
-    uint32_t major;
-    uint32_t minor;
+    uint32_t major = 0;
+    uint32_t minor = 0;
 };
 
 struct ngpImports
