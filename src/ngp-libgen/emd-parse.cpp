@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "emdlib/scanemddef.h"
 #include "emd-parse.h"
-#include "sha1.h"
+#include "libs/sha1.h"
 
 // helper funcs
 static ngpImports* imports;
@@ -113,7 +113,7 @@ int libattr_def(emd_parse_args *args)
     }
     else if (strcmp(str_attr, "plugin_link") == 0)
     {
-      attr = 0x2; // should be 0x2000?
+      attr = 0x2000; // seems to be set to 0x2 in libgen?
     }
     else if (strcmp(str_attr, "syscall_export") == 0)
     {
@@ -216,19 +216,30 @@ int libfunc_def(emd_parse_args *args)
   {
     func_nid = emd_token_get_integer(args->opt_value[4]);
   } else {
-    SHA1_CTX ctx;
-    SHA1Init(&ctx);
+//    SHA1_CTX ctx;
+//    SHA1Init(&ctx);
 
+    sha1::SHA1 checksum;
+
+    checksum.processBytes((const uint8_t*)funcname, strlen(funcname));
+
+    checksum.processBytes((const uint8_t*)lib->nidsuffix.c_str(), lib->nidsuffix.length());
+
+/*
     for (int i = 0; i < strlen(funcname); i++)
+    {
         SHA1Update(&ctx, (const uint8_t*)funcname + i, 1);
+    }
 
     for (int i = 0; i < lib->nidsuffix.length(); i++)
         SHA1Update(&ctx, (const uint8_t*)lib->nidsuffix.c_str() + i, 1);
+*/
 
-    uint8_t sha1[20];
-    SHA1Final(sha1, &ctx);
+    uint8_t sha1result[20];
+//    SHA1Final(sha1, &ctx);
+    checksum.getDigestBytes(sha1result);
 
-    func_nid = (sha1[3] << 24) | (sha1[2] << 16) | (sha1[1] << 8) | sha1[0];
+    func_nid = (sha1result[3] << 24) | (sha1result[2] << 16) | (sha1result[1] << 8) | sha1result[0];
   }
 
   add_func_to_library(lib, funcname, func_nid);
@@ -252,6 +263,17 @@ int libvar_def(emd_parse_args *args)
   {
     var_nid = emd_token_get_integer(args->opt_value[4]);
   } else {
+
+    sha1::SHA1 checksum;
+
+    checksum.processBytes((const uint8_t*)varname, strlen(varname));
+
+    checksum.processBytes((const uint8_t*)lib->nidsuffix.c_str(), lib->nidsuffix.length());
+
+    uint8_t sha1result[20];
+    checksum.getDigestBytes(sha1result);
+
+/*
     SHA1_CTX ctx;
     SHA1Init(&ctx);
 
@@ -263,8 +285,8 @@ int libvar_def(emd_parse_args *args)
 
     uint8_t sha1[20];
     SHA1Final(sha1, &ctx);
-
-    var_nid = (sha1[3] << 24) | (sha1[2] << 16) | (sha1[1] << 8) | sha1[0];
+*/
+    var_nid = (sha1result[3] << 24) | (sha1result[2] << 16) | (sha1result[1] << 8) | sha1result[0];
   }
 
   add_var_to_library(lib, varname, var_nid);
@@ -521,11 +543,11 @@ emd_parse_table emd_parse_table_table[PARSE_TABLE_SIZE]
         {NULL, NULL},
         {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}}};
 
-ngpImports *vita_imports_load(const char *filename, int verbose)
+ngpImports *vita_imports_load(const std::string& filename, int verbose)
 {
     imports = new ngpImports();
 
-    Emd_token_buffer *buf = read_emd_token_from_file(filename);
+    Emd_token_buffer *buf = read_emd_token_from_file(filename.c_str());
     int res               = scan_emd_entries(buf, emd_parse_table_table, PARSE_TABLE_SIZE);
     free_emd_token_buffer(buf);
     if (res > 0 ) return NULL;

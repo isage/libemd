@@ -39,6 +39,6 @@ struct ngpImports
     std::vector<ngpImportsModule*> modules;
 };
 
-ngpImports* vita_imports_load(const char *filename, int verbose);
+ngpImports* vita_imports_load(const std::string& filename, int verbose);
 
 #endif
