@@ -331,7 +331,7 @@ void SceStubWriter::make_func_stubs(ngpImportsLib *library, PPAr* ar)
         syma.add_symbol(stra, ".strtab", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, str_sec->get_index() );
         syma.add_symbol(stra, ".symtab", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, sym_sec->get_index() );
 
-        std::string inid_name = fmt::format("_INID_{}", func->name);
+        std::string inid_name = fmt::format("_INID_{}_{}__{}_{}", library->name.length(), library->name, func->name.length(), func->name);
         syma.add_symbol(stra, inid_name.c_str(), func->NID, 0, STB_GLOBAL, STT_OBJECT, 0,  SHN_ABS);
 
         syma.add_symbol(stra, "$a", 0x00000000, 0, STB_LOCAL, STT_NOTYPE, 0,  sceStub_sec->get_index());
@@ -380,12 +380,19 @@ void SceStubWriter::make_stub()
         // generate stub. name it
         std::string stubname;
         if (library->stubname.empty())
-            stubname = fmt::format("{}_stub.a", library->name);
+        {
+            if (_weak)
+                stubname = fmt::format("lib{}_stub_weak.a", library->name);
+            else
+                stubname = fmt::format("lib{}_stub.a", library->name);
+        }
         else
-            stubname = fmt::format("{}.a", library->stubname);
-
-        if (_weak)
-            stubname = fmt::format("{}_weak.a", stubname);
+        {
+            if (_weak)
+                stubname = fmt::format("{}_weak.a", library->stubname);
+            else
+                stubname = fmt::format("{}.a", library->stubname);
+        }
 
         PPAr ar(stubname);
 

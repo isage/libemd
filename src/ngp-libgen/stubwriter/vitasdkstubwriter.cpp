@@ -17,13 +17,21 @@ void VitasdkStubWriter::make_stub()
       {
         // generate stub. name it
         std::string stubname;
-        if (library->stubname.empty())
-            stubname = fmt::format("{}_stub.a", library->name);
-        else
-            stubname = fmt::format("{}.a", library->stubname);
 
-        if (_weak)
-            stubname = fmt::format("{}_weak.a", stubname);
+        if (library->stubname.empty())
+        {
+            if (_weak)
+                stubname = fmt::format("lib{}_stub_weak.a", library->name);
+            else
+                stubname = fmt::format("lib{}_stub.a", library->name);
+        }
+        else
+        {
+            if (_weak)
+                stubname = fmt::format("{}_weak.a", library->stubname);
+            else
+                stubname = fmt::format("{}.a", library->stubname);
+        }
 
         PPAr ar(stubname);
 
