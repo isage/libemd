@@ -367,6 +367,133 @@ void SceStubWriter::make_func_stubs(ngpImportsLib *library, PPAr* ar)
 
 void SceStubWriter::make_var_stubs(ngpImportsLib *library, PPAr* ar)
 {
+    for (auto& var: library->variables)
+    {
+        elfio writer;
+        writer.create( ELFCLASS32, ELFDATA2LSB );
+
+        writer.set_os_abi( ELFOSABI_NONE );
+        writer.set_type( ET_REL );
+        writer.set_machine( EM_ARM );
+        writer.set_flags( 0x5000000 );
+        writer.set_segment_entry_size(0);
+
+        section* text_sec = writer.sections.add( ".text" );
+        text_sec->set_type( SHT_PROGBITS );
+        text_sec->set_flags( SHF_ALLOC | SHF_EXECINSTR );
+        text_sec->set_addr_align( 0x1 );
+
+        section* data_sec = writer.sections.add( ".data" );
+        data_sec->set_type( SHT_PROGBITS );
+        data_sec->set_flags( SHF_WRITE | SHF_ALLOC );
+        data_sec->set_addr_align( 0x1 );
+
+        section* bss_sec = writer.sections.add( ".bss" );
+        bss_sec->set_type( SHT_NOBITS );
+        bss_sec->set_flags( SHF_WRITE | SHF_ALLOC );
+        bss_sec->set_addr_align( 0x1 );
+
+        std::string sceVStub_name = fmt::format(".sceVStub.rodata.{}.{}", library->name, var->name);
+
+        section* sceVStub_sec = writer.sections.add( sceVStub_name.c_str() );
+        sceVStub_sec->set_type( SHT_PROGBITS );
+        sceVStub_sec->set_flags( SHF_ALLOC );
+        sceVStub_sec->set_addr_align(4);
+        sceVStub_sec->append_data( "\0\0\0\0", 4 );
+
+        section* sceRefs_sec = writer.sections.add( ".sceRefs.rodata" );
+        sceRefs_sec->set_type( SHT_PROGBITS );
+        sceRefs_sec->set_flags( SHF_ALLOC );
+        sceRefs_sec->set_addr_align(4);
+        sceRefs_sec->append_data( "\0\0\0\0", 4 );
+        sceRefs_sec->append_data( "\0\0\0\0", 4 );
+        sceRefs_sec->append_data( "\0\0\0\0", 4 );
+
+        section* sceVNID_sec = writer.sections.add( ".sceVNID.rodata" );
+        sceVNID_sec->set_type( SHT_PROGBITS );
+        sceVNID_sec->set_flags( SHF_ALLOC );
+        sceVNID_sec->set_addr_align(4);
+        sceVNID_sec->append_data( "\0\0\0\0", 4 );
+
+        section* sceLibgenMark_sec = writer.sections.add( ".sce_libgen_mark" );
+        sceLibgenMark_sec->set_type( SHT_PROGBITS );
+        sceLibgenMark_sec->set_addr_align(4);
+        sceLibgenMark_sec->append_data( "\x14\x02\x00\x00", 4 );
+        sceLibgenMark_sec->append_data( "\x00\x00\x00\x00", 4 );
+        sceLibgenMark_sec->append_data( "\x00\x00\x00\x00", 4 );
+        sceLibgenMark_sec->append_data( (char*)&var->NID, 4 );
+        sceLibgenMark_sec->append_data( "\x00\x00\x00\x00", 4 );
+
+        section* rel_sec = writer.sections.add( ".rel.sce_libgen_mark" );
+        rel_sec->set_type( SHT_REL );
+        rel_sec->set_info( sceLibgenMark_sec->get_index() );
+        rel_sec->set_addr_align( 0x4 );
+        rel_sec->set_entry_size( writer.get_default_entry_size( SHT_REL ) );
+
+        relocation_section_accessor rela( writer, rel_sec );
+
+        section* str_sec = writer.sections.add( ".strtab" );
+        str_sec->set_type( SHT_STRTAB );
+        str_sec->set_addr_align( 0x1 );
+
+        string_section_accessor stra( str_sec );
+
+        section* sym_sec = writer.sections.add( ".symtab" );
+        sym_sec->set_type( SHT_SYMTAB );
+        sym_sec->set_info( 1 );
+        sym_sec->set_addr_align( 0x4 );
+        sym_sec->set_entry_size( writer.get_default_entry_size( SHT_SYMTAB ) );
+        sym_sec->set_link( str_sec->get_index() );
+
+        rel_sec->set_link( sym_sec->get_index() );
+
+        symbol_section_accessor syma( writer, sym_sec );
+
+        syma.add_symbol(stra, ".text", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, text_sec->get_index() );
+        syma.add_symbol(stra, ".data", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, data_sec->get_index() );
+        syma.add_symbol(stra, ".bss", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, bss_sec->get_index() );
+        syma.add_symbol(stra, sceVStub_name.c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, sceVStub_sec->get_index() );
+        syma.add_symbol(stra, ".sceRefs.rodata", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, sceRefs_sec->get_index() );
+        syma.add_symbol(stra, ".sceVNID.rodata", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, sceVNID_sec->get_index() );
+        syma.add_symbol(stra, ".sce_libgen_mark", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, sceLibgenMark_sec->get_index() );
+        syma.add_symbol(stra, ".rel.sce_libgen_mark", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, rel_sec->get_index() );
+
+        syma.add_symbol(stra, ".shstrtab", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, 1 );
+        syma.add_symbol(stra, ".strtab", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, str_sec->get_index() );
+        syma.add_symbol(stra, ".symtab", 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, sym_sec->get_index() );
+
+        std::string inid_name = fmt::format("_INID_{}_{}__{}_{}", library->name.length(), library->name, var->name.length(), var->name);
+        syma.add_symbol(stra, inid_name.c_str(), var->NID, 0, STB_GLOBAL, STT_OBJECT, 0,  SHN_ABS);
+
+        syma.add_symbol(stra, "$d", 0x00000000, 0, STB_LOCAL, STT_NOTYPE, 0,  sceVStub_sec->get_index());
+
+        std::string head_name = fmt::format("_{}_0001_stub_head", library->name);
+
+        Elf_Word sym_to_adjust = syma.add_symbol(stra, head_name.c_str(), 0x00000000, 0, STB_GLOBAL, STT_NOTYPE, 0, 0);
+        rela.add_entry( 4, sym_to_adjust, (unsigned char)R_ARM_ABS32 );
+
+        sym_to_adjust = syma.add_symbol(stra, var->name.c_str(), 0x00000000, 0, STB_GLOBAL, STT_OBJECT, 0,  sceVStub_sec->get_index());
+        rela.add_entry( 8, sym_to_adjust, (unsigned char)R_ARM_ABS32 );
+
+        std::string nid_name = fmt::format("_NID_{}", var->name);
+        sym_to_adjust = syma.add_symbol(stra, nid_name.c_str(), 0x00000000, 0, STB_GLOBAL, STT_NOTYPE, 0, 0 );
+        rela.add_entry( 0x10, sym_to_adjust, (unsigned char)R_ARM_ABS32 );
+
+        syma.arrange_local_symbols( [&]( Elf_Xword first, Elf_Xword second ) {
+            rela.swap_symbols( first, second );
+        } );
+
+        // add INID_<var> and <var> to ar symbols
+
+        std::string filename = fmt::format("_{}-0001_V00_{:08x}.o", library->name, var->NID);
+
+        PPArMember* m = ar->addFile(filename);
+        m->addSymbol(inid_name);
+        m->addSymbol(var->name);
+        writer.save( m->data );
+
+        return;
+    }
 
 }
 
