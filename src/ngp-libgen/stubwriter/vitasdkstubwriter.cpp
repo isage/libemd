@@ -70,10 +70,13 @@ void VitasdkStubWriter::make_stub()
             fstub_sec->set_flags( SHF_ALLOC | SHF_EXECINSTR );
             fstub_sec->set_addr_align(16);
 
-            fstub_sec->append_data( "\x00\x00\x00\x00", 4 ); // TODO: attr + weak/nonweak
+            uint32_t flags = library->flags;
+            if (_weak) flags |= 0x8;
+            fstub_sec->append_data( (char*)&flags, 4 );
             fstub_sec->append_data( (const char*)&library->NID, 4 );
             fstub_sec->append_data( (const char*)&function->NID, 4 );
-            fstub_sec->append_data( "\x00\x00\x00\x00", 4 ); // align data to 16
+//            fstub_sec->append_data( "\x00\x00\x00\x00", 4 ); // align data to 16
+            fstub_sec->append_data( "\x00\xF0\x20\xE3", 4 ); // align data to 16 with nop
 
             section* str_sec = writer.sections.add( ".strtab" );
             str_sec->set_type( SHT_STRTAB );
@@ -97,8 +100,8 @@ void VitasdkStubWriter::make_stub()
 
             syma.add_symbol(stra, fmt::format(".vitalink.fstubs.{}",library->name).c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, fstub_sec->get_index() );
 
-
-            syma.add_symbol(stra, function->name.c_str(),0x877181ed, 0, STB_GLOBAL, STT_FUNC, 0, fstub_sec->get_index());
+//            syma.add_symbol(stra, function->name.c_str(),0x877181ed, 0, STB_GLOBAL, STT_FUNC, 0, fstub_sec->get_index());
+            syma.add_symbol(stra, function->name.c_str(),0, 0, STB_GLOBAL, STT_FUNC, 0, fstub_sec->get_index());
             syma.add_symbol(stra, "$d", 0x00000000, 0, STB_LOCAL, STT_NOTYPE, 0,  fstub_sec->get_index());
             syma.add_symbol(stra, "$a", 0x0000000c, 0, STB_LOCAL, STT_NOTYPE, 0,  fstub_sec->get_index());
             syma.arrange_local_symbols();
@@ -172,8 +175,8 @@ void VitasdkStubWriter::make_stub()
 
             syma.add_symbol(stra, fmt::format(".vitalink.vstubs.{}",library->name).c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, fstub_sec->get_index() );
 
-
-            syma.add_symbol(stra, variable->name.c_str(),0x877181ed, 0, STB_GLOBAL, STT_FUNC, 0, fstub_sec->get_index());
+//            syma.add_symbol(stra, variable->name.c_str(),0x877181ed, 0, STB_GLOBAL, STT_FUNC, 0, fstub_sec->get_index());
+            syma.add_symbol(stra, variable->name.c_str(), 0, 0, STB_GLOBAL, STT_FUNC, 0, fstub_sec->get_index());
             syma.add_symbol(stra, "$d", 0x00000000, 0, STB_LOCAL, STT_NOTYPE, 0,  fstub_sec->get_index());
             syma.add_symbol(stra, "$a", 0x0000000c, 0, STB_LOCAL, STT_NOTYPE, 0,  fstub_sec->get_index());
             syma.arrange_local_symbols();
