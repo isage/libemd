@@ -13,7 +13,7 @@ typedef struct Emd_token_list {
 extern "C" {
 #endif
 
-Emd_token_list* start_emd_token_list();
+Emd_token_list* start_emd_token_list(const char* filename);
 void free_emd_list(Emd_token_list* list);
 
 void add_keyword_emd_token(Emd_token_list* list, KeywordCode value);
