@@ -1,7 +1,11 @@
 #include <elfio/elfio.hpp>
+#include <fmt/core.h>
+#include <algorithm>
+#include <ctime>
 #include "scestubwriter.h"
 
 using namespace ELFIO;
+using namespace ARIO;
 
 SceStubWriter::SceStubWriter(ngpImports *imp, bool weak) : StubWriter(imp, weak) {}
 
@@ -9,7 +13,7 @@ SceStubWriter::~SceStubWriter()
 {
 }
 
-void SceStubWriter::make_head_stub(ngpImportsLib *library, PPAr* ar)
+void SceStubWriter::make_head_stub(ngpImportsLib *library, ario& ar)
 {
     elfio writer;
 
@@ -123,15 +127,24 @@ void SceStubWriter::make_head_stub(ngpImportsLib *library, PPAr* ar)
     std::string filename = fmt::format("_{}-0001_head.o", library->name);
 
     // add stub_head, stub_str and INID_lib to ar symbols
-    PPArMember* m = ar->addFile(filename);
-    m->addSymbol(head_name);
-    m->addSymbol(stub_str_name);
-    m->addSymbol(inid_name);
-    writer.save( m->data );
+
+    ario::Member new_member;
+    new_member.name = filename;
+    new_member.date = std::time(nullptr);
+    new_member.uid  = 0;
+    new_member.gid  = 0;
+    new_member.mode = 0100644;
+
+    std::stringstream data;
+    writer.save( data );
+
+    const auto result = ar.add_member( new_member, data.str() );
+
+    ar.add_symbols_for_member( ar.members.back(), {inid_name,stub_str_name,head_name});
 
 }
 
-void SceStubWriter::make_nid_stub(ngpImportsLib *library, PPAr* ar)
+void SceStubWriter::make_nid_stub(ngpImportsLib *library, ario& ar)
 {
  // add all NID_ (lib, then funcs, then vars) to ar symbols
     elfio writer;
@@ -200,25 +213,40 @@ void SceStubWriter::make_nid_stub(ngpImportsLib *library, PPAr* ar)
 
     std::string filename = fmt::format("_{}-0001_NIDS.o", library->name);
 
+    ario::Member new_member;
+    new_member.name = filename;
+    new_member.date = std::time(nullptr);
+    new_member.uid  = 0;
+    new_member.gid  = 0;
+    new_member.mode = 0100644;
+
+    std::stringstream data;
+    writer.save( data );
+
+    const auto result = ar.add_member( new_member, data.str() );
+
     // add stub_head, stub_str and INID_lib to ar symbols
-    PPArMember* m = ar->addFile(filename);
-    m->addSymbol(lib_nid_name);
+    std::vector<std::string> symbols;
+    symbols.push_back(lib_nid_name);
+
     for (auto& func: library->functions)
     {
         std::string func_nid_name = fmt::format("_NID_{}", func->name);
-        m->addSymbol(func_nid_name);
+        symbols.push_back(func_nid_name);
     }
 
     for (auto& var: library->variables)
     {
         std::string var_nid_name = fmt::format("_NID_{}", var->name);
-        m->addSymbol(var_nid_name);
+        symbols.push_back(var_nid_name);
     }
 
-    writer.save( m->data );
+    std::reverse(symbols.begin(), symbols.end()); 
+
+    ar.add_symbols_for_member( ar.members.back(), symbols);
 }
 
-void SceStubWriter::make_func_stubs(ngpImportsLib *library, PPAr* ar)
+void SceStubWriter::make_func_stubs(ngpImportsLib *library, ario& ar)
 {
     for (auto& func: library->functions)
     {
@@ -356,16 +384,23 @@ void SceStubWriter::make_func_stubs(ngpImportsLib *library, PPAr* ar)
 
         std::string filename = fmt::format("_{}-0001_F00_{:08x}.o", library->name, func->NID);
 
-        PPArMember* m = ar->addFile(filename);
-        m->addSymbol(inid_name);
-        m->addSymbol(func->name);
-        writer.save( m->data );
+        ario::Member new_member;
+        new_member.name = filename;
+        new_member.date = std::time(nullptr);
+        new_member.uid  = 0;
+        new_member.gid  = 0;
+        new_member.mode = 0100644;
 
+        std::stringstream data;
+        writer.save( data );
+
+        const auto result = ar.add_member( new_member, data.str() );
+        ar.add_symbols_for_member( ar.members.back(), {func->name, inid_name});
         return;
     }
 }
 
-void SceStubWriter::make_var_stubs(ngpImportsLib *library, PPAr* ar)
+void SceStubWriter::make_var_stubs(ngpImportsLib *library, ario& ar)
 {
     for (auto& var: library->variables)
     {
@@ -487,10 +522,18 @@ void SceStubWriter::make_var_stubs(ngpImportsLib *library, PPAr* ar)
 
         std::string filename = fmt::format("_{}-0001_V00_{:08x}.o", library->name, var->NID);
 
-        PPArMember* m = ar->addFile(filename);
-        m->addSymbol(inid_name);
-        m->addSymbol(var->name);
-        writer.save( m->data );
+        ario::Member new_member;
+        new_member.name = filename;
+        new_member.date = std::time(nullptr);
+        new_member.uid  = 0;
+        new_member.gid  = 0;
+        new_member.mode = 0100644;
+
+        std::stringstream data;
+        writer.save( data );
+
+        const auto result = ar.add_member( new_member, data.str() );
+        ar.add_symbols_for_member( ar.members.back(), {var->name, inid_name});
 
         return;
     }
@@ -521,14 +564,14 @@ void SceStubWriter::make_stub()
                 stubname = fmt::format("{}.a", library->stubname);
         }
 
-        PPAr ar(stubname);
+        ario ar;
 
-        make_func_stubs(library, &ar);
-        make_var_stubs(library, &ar);
-        make_nid_stub(library, &ar);
-        make_head_stub(library, &ar);
+        make_head_stub(library, ar);
+        make_nid_stub(library, ar);
+        make_func_stubs(library, ar);
+        make_var_stubs(library, ar);
 
-        ar.save();
+        ar.save(stubname);
       }
     }
 

@@ -2,7 +2,7 @@
 #define __SCESTUBWRITER_H__
 
 #include "stubwriter.h"
-#include <pipiar.h>
+#include <ario/ario.hpp>
 
 class SceStubWriter : public StubWriter {
     public:
@@ -11,10 +11,10 @@ class SceStubWriter : public StubWriter {
         void make_stub() override;
 
     private:
-        void make_head_stub(ngpImportsLib *library, PPAr* ar);
-        void make_nid_stub(ngpImportsLib *library, PPAr* ar);
-        void make_func_stubs(ngpImportsLib *library, PPAr* ar);
-        void make_var_stubs(ngpImportsLib *library, PPAr* ar);
+        void make_head_stub(ngpImportsLib *library, ARIO::ario& ar);
+        void make_nid_stub(ngpImportsLib *library, ARIO::ario& ar);
+        void make_func_stubs(ngpImportsLib *library, ARIO::ario& ar);
+        void make_var_stubs(ngpImportsLib *library, ARIO::ario& ar);
 };
 
 #endif

@@ -54,8 +54,17 @@ target_include_directories(
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ngp-libgen/libs/>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
+add_library(ario INTERFACE)
+add_library(ario::ario ALIAS ario)
+
+target_include_directories(
+    ario
+    INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/ngp-libgen/libs/>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
 target_include_directories(ngp-libgen PRIVATE "src/")
-target_link_libraries(ngp-libgen emd fmt::fmt elfio::elfio)
+target_link_libraries(ngp-libgen emd fmt::fmt elfio::elfio ario::ario)
 
 target_include_directories(vita-emd-to-yaml PRIVATE "src/")
 target_link_libraries(vita-emd-to-yaml emd yaml)

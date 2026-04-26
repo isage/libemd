@@ -1,9 +1,11 @@
 #include <elfio/elfio.hpp>
-#include <pipiar.h>
 #include "vitasdkstubwriter.h"
 #include <fmt/core.h>
+#include <ario/ario.hpp>
+#include <ctime>
 
 using namespace ELFIO;
+using namespace ARIO;
 
 VitasdkStubWriter::VitasdkStubWriter(ngpImports *imp, bool weak) : StubWriter(imp, weak) {}
 
@@ -33,7 +35,7 @@ void VitasdkStubWriter::make_stub()
                 stubname = fmt::format("{}.a", library->stubname);
         }
 
-        PPAr ar(stubname);
+        ario ar;
 
         // vitasdk has just .o per func/var
 
@@ -100,16 +102,23 @@ void VitasdkStubWriter::make_stub()
 
             syma.add_symbol(stra, fmt::format(".vitalink.fstubs.{}",library->name).c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, fstub_sec->get_index() );
 
-//            syma.add_symbol(stra, function->name.c_str(),0x877181ed, 0, STB_GLOBAL, STT_FUNC, 0, fstub_sec->get_index());
             syma.add_symbol(stra, function->name.c_str(),0, 0, STB_GLOBAL, STT_FUNC, 0, fstub_sec->get_index());
             syma.add_symbol(stra, "$d", 0x00000000, 0, STB_LOCAL, STT_NOTYPE, 0,  fstub_sec->get_index());
             syma.add_symbol(stra, "$a", 0x0000000c, 0, STB_LOCAL, STT_NOTYPE, 0,  fstub_sec->get_index());
             syma.arrange_local_symbols();
 
-            PPArMember* m = ar.addFile(filename);
-            std::cout << m->filename << std::endl;
-            m->addSymbol(function->name);
-            writer.save( m->data );
+            ario::Member new_member;
+            new_member.name = filename;
+            new_member.date = std::time(nullptr);
+            new_member.uid  = 0;
+            new_member.gid  = 0;
+            new_member.mode = 0100644;
+
+            std::stringstream data;
+            writer.save( data );
+
+            const auto result = ar.add_member( new_member, data.str() );
+            ar.add_symbols_for_member( ar.members.back(), {function->name});
         }
 
         for (auto& variable: library->variables)
@@ -175,18 +184,25 @@ void VitasdkStubWriter::make_stub()
 
             syma.add_symbol(stra, fmt::format(".vitalink.vstubs.{}",library->name).c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, 0, fstub_sec->get_index() );
 
-//            syma.add_symbol(stra, variable->name.c_str(),0x877181ed, 0, STB_GLOBAL, STT_FUNC, 0, fstub_sec->get_index());
             syma.add_symbol(stra, variable->name.c_str(), 0, 0, STB_GLOBAL, STT_OBJECT, 0, fstub_sec->get_index());
             syma.add_symbol(stra, "$d", 0x00000000, 0, STB_LOCAL, STT_NOTYPE, 0,  fstub_sec->get_index());
             syma.add_symbol(stra, "$a", 0x0000000c, 0, STB_LOCAL, STT_NOTYPE, 0,  fstub_sec->get_index());
             syma.arrange_local_symbols();
 
-            PPArMember* m = ar.addFile(filename);
-            m->addSymbol(variable->name);
-            writer.save( m->data );
+            ario::Member new_member;
+            new_member.name = filename;
+            new_member.date = std::time(nullptr);
+            new_member.uid  = 0;
+            new_member.gid  = 0;
+            new_member.mode = 0100644;
 
+            std::stringstream data;
+            writer.save( data );
+
+            const auto result = ar.add_member( new_member, data.str() );
+            ar.add_symbols_for_member( ar.members.back(), {variable->name});
         }
-        ar.save();
+        ar.save(stubname);
       }
     }
 }

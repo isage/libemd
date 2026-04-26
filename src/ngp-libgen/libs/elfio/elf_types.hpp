@@ -29,16 +29,16 @@ THE SOFTWARE.
 namespace ELFIO {
 #endif
 
-using Elf_Half   = uint16_t;
-using Elf_Word   = uint32_t;
-using Elf_Sword  = int32_t;
-using Elf_Xword  = uint64_t;
-using Elf_Sxword = int64_t;
+using Elf_Half   = std::uint16_t;
+using Elf_Word   = std::uint32_t;
+using Elf_Sword  = std::int32_t;
+using Elf_Xword  = std::uint64_t;
+using Elf_Sxword = std::int64_t;
 
-using Elf32_Addr = uint32_t;
-using Elf32_Off  = uint32_t;
-using Elf64_Addr = uint64_t;
-using Elf64_Off  = uint64_t;
+using Elf32_Addr = std::uint32_t;
+using Elf32_Off  = std::uint32_t;
+using Elf64_Addr = std::uint64_t;
+using Elf64_Off  = std::uint64_t;
 
 using Elf32_Half  = Elf_Half;
 using Elf64_Half  = Elf_Half;
@@ -295,7 +295,7 @@ constexpr Elf_Half EM_RISCV           = 243; // RISC-V
 constexpr Elf_Half EM_LANAI           = 244; // Lanai processor
 constexpr Elf_Half EM_CEVA            = 245; // CEVA Processor Architecture Family
 constexpr Elf_Half EM_CEVA_X2         = 246; // CEVA X2 Processor Family
-constexpr Elf_Half EM_BPF             = 247; // Linux BPF – in-kernel virtual machine
+constexpr Elf_Half EM_BPF             = 247; // Linux BPF - in-kernel virtual machine
 constexpr Elf_Half EM_GRAPHCORE_IPU   = 248; // Graphcore Intelligent Processing Unit
 constexpr Elf_Half EM_IMG1            = 249; // Imagination Technologies
 constexpr Elf_Half EM_NFP             = 250; // Netronome Flow Processor (P)
@@ -821,6 +821,30 @@ constexpr unsigned R_386_IRELATIVE          = 42;
 constexpr unsigned R_386_GOT32X             = 43;
 constexpr unsigned R_X86_64_GNU_VTINHERIT   = 250;
 constexpr unsigned R_X86_64_GNU_VTENTRY     = 251;
+//   Arm
+constexpr unsigned R_ARM_NONE         = 0;
+constexpr unsigned R_ARM_PC24         = 1;
+constexpr unsigned R_ARM_ABS32        = 2;
+constexpr unsigned R_ARM_REL32        = 3;
+constexpr unsigned R_ARM_CALL         = 28;
+constexpr unsigned R_ARM_JUMP24       = 29;
+constexpr unsigned R_ARM_TARGET1      = 38;
+constexpr unsigned R_ARM_V4BX         = 40;
+constexpr unsigned R_ARM_PREL31       = 42;
+constexpr unsigned R_ARM_MOVW_ABS_NC  = 43;
+constexpr unsigned R_ARM_MOVT_ABS     = 44;
+constexpr unsigned R_ARM_MOVW_PREL_NC = 45;
+constexpr unsigned R_ARM_MOVT_PREL    = 46;
+constexpr unsigned R_ARM_ALU_PC_G0_NC = 57;
+constexpr unsigned R_ARM_ALU_PC_G1_NC = 59;
+constexpr unsigned R_ARM_LDR_PC_G2    = 63;
+//   Arm thumb
+constexpr unsigned R_ARM_THM_CALL         = 10;
+constexpr unsigned R_ARM_THM_JUMP24       = 30;
+constexpr unsigned R_ARM_THM_MOVW_ABS_NC  = 47;
+constexpr unsigned R_ARM_THM_MOVT_ABS     = 48;
+constexpr unsigned R_ARM_THM_MOVW_PREL_NC = 49;
+constexpr unsigned R_ARM_THM_MOVT_PREL    = 50;
 //   AArch64
 constexpr unsigned R_AARCH64_NONE                         = 0;
 constexpr unsigned R_AARCH64_P32_ABS32                    = 1;
@@ -1009,30 +1033,6 @@ constexpr unsigned R_RISCV_SET16         = 55;
 constexpr unsigned R_RISCV_SET32         = 56;
 constexpr unsigned R_RISCV_32_PCREL      = 57;
 constexpr unsigned R_RISCV_IRELATIVE     = 58;
-//ARM32
-constexpr unsigned R_ARM_NONE            = 0;
-constexpr unsigned R_ARM_PC24            = 1;
-constexpr unsigned R_ARM_ABS32           = 2;
-constexpr unsigned R_ARM_REL32           = 3;
-constexpr unsigned R_ARM_CALL            = 28;
-constexpr unsigned R_ARM_JUMP24          = 29;
-constexpr unsigned R_ARM_TARGET1         = 38;
-constexpr unsigned R_ARM_V4BX            = 40;
-constexpr unsigned R_ARM_PREL31          = 42;
-constexpr unsigned R_ARM_MOVW_ABS_NC     = 43;
-constexpr unsigned R_ARM_MOVT_ABS        = 44;
-constexpr unsigned R_ARM_MOVW_PREL_NC    = 45;
-constexpr unsigned R_ARM_MOVT_PREL       = 46;
-constexpr unsigned R_ARM_ALU_PC_G0_NC    = 57;
-constexpr unsigned R_ARM_ALU_PC_G1_NC    = 59;
-constexpr unsigned R_ARM_LDR_PC_G2       = 63;
-
-constexpr unsigned R_ARM_THM_CALL         = 10;
-constexpr unsigned R_ARM_THM_JUMP24       = 30;
-constexpr unsigned R_ARM_THM_MOVW_ABS_NC  = 47;
-constexpr unsigned R_ARM_THM_MOVT_ABS     = 48;
-constexpr unsigned R_ARM_THM_MOVW_PREL_NC = 49;
-constexpr unsigned R_ARM_THM_MOVT_PREL    = 50;
 
 // Segment types
 constexpr Elf_Word PT_NULL         = 0;
@@ -1181,113 +1181,189 @@ constexpr Elf_Word AT_L3_CACHESIZE      = 46;
 // ELF file header
 struct Elf32_Ehdr
 {
+    // Identification bytes
     unsigned char e_ident[EI_NIDENT];
-    Elf_Half      e_type;
-    Elf_Half      e_machine;
-    Elf_Word      e_version;
-    Elf32_Addr    e_entry;
-    Elf32_Off     e_phoff;
-    Elf32_Off     e_shoff;
-    Elf_Word      e_flags;
-    Elf_Half      e_ehsize;
-    Elf_Half      e_phentsize;
-    Elf_Half      e_phnum;
-    Elf_Half      e_shentsize;
-    Elf_Half      e_shnum;
-    Elf_Half      e_shstrndx;
+    // Object file type
+    Elf_Half e_type;
+    // Architecture
+    Elf_Half e_machine;
+    // Object file version
+    Elf_Word e_version;
+    // Entry point virtual address
+    Elf32_Addr e_entry;
+    // Program header table file offset
+    Elf32_Off e_phoff;
+    // Section header table file offset
+    Elf32_Off e_shoff;
+    // Processor-specific flags
+    Elf_Word e_flags;
+    // ELF header size in bytes
+    Elf_Half e_ehsize;
+    // Program header table entry size
+    Elf_Half e_phentsize;
+    // Program header table entry count
+    Elf_Half e_phnum;
+    // Section header table entry size
+    Elf_Half e_shentsize;
+    // Section header table entry count
+    Elf_Half e_shnum;
+    // Section header string table index
+    Elf_Half e_shstrndx;
 };
 
 struct Elf64_Ehdr
 {
+    // Identification bytes
     unsigned char e_ident[EI_NIDENT];
-    Elf_Half      e_type;
-    Elf_Half      e_machine;
-    Elf_Word      e_version;
-    Elf64_Addr    e_entry;
-    Elf64_Off     e_phoff;
-    Elf64_Off     e_shoff;
-    Elf_Word      e_flags;
-    Elf_Half      e_ehsize;
-    Elf_Half      e_phentsize;
-    Elf_Half      e_phnum;
-    Elf_Half      e_shentsize;
-    Elf_Half      e_shnum;
-    Elf_Half      e_shstrndx;
+    // Object file type
+    Elf_Half e_type;
+    // Architecture
+    Elf_Half e_machine;
+    // Object file version
+    Elf_Word e_version;
+    // Entry point virtual address
+    Elf64_Addr e_entry;
+    // Program header table file offset
+    Elf64_Off e_phoff;
+    // Section header table file offset
+    Elf64_Off e_shoff;
+    // Processor-specific flags
+    Elf_Word e_flags;
+    // ELF header size in bytes
+    Elf_Half e_ehsize;
+    // Program header table entry size
+    Elf_Half e_phentsize;
+    // Program header table entry count
+    Elf_Half e_phnum;
+    // Section header table entry size
+    Elf_Half e_shentsize;
+    // Section header table entry count
+    Elf_Half e_shnum;
+    // Section header string table index
+    Elf_Half e_shstrndx;
 };
 
 // Section header
 struct Elf32_Shdr
 {
-    Elf_Word   sh_name;
-    Elf_Word   sh_type;
-    Elf_Word   sh_flags;
+    // Section name (string table index)
+    Elf_Word sh_name;
+    // Section type
+    Elf_Word sh_type;
+    // Section flags
+    Elf_Word sh_flags;
+    // Section virtual address at execution
     Elf32_Addr sh_addr;
-    Elf32_Off  sh_offset;
-    Elf_Word   sh_size;
-    Elf_Word   sh_link;
-    Elf_Word   sh_info;
-    Elf_Word   sh_addralign;
-    Elf_Word   sh_entsize;
+    // Section file offset
+    Elf32_Off sh_offset;
+    // Section size in bytes
+    Elf_Word sh_size;
+    // Link to another section
+    Elf_Word sh_link;
+    // Additional section information
+    Elf_Word sh_info;
+    // Section alignment
+    Elf_Word sh_addralign;
+    // Entry size if section holds table
+    Elf_Word sh_entsize;
 };
 
 struct Elf64_Shdr
 {
-    Elf_Word   sh_name;
-    Elf_Word   sh_type;
-    Elf_Xword  sh_flags;
+    // Section name (string table index)
+    Elf_Word sh_name;
+    // Section type
+    Elf_Word sh_type;
+    // Section flags
+    Elf_Xword sh_flags;
+    // Section virtual address at execution
     Elf64_Addr sh_addr;
-    Elf64_Off  sh_offset;
-    Elf_Xword  sh_size;
-    Elf_Word   sh_link;
-    Elf_Word   sh_info;
-    Elf_Xword  sh_addralign;
-    Elf_Xword  sh_entsize;
+    // Section file offset
+    Elf64_Off sh_offset;
+    // Section size in bytes
+    Elf_Xword sh_size;
+    // Link to another section
+    Elf_Word sh_link;
+    // Additional section information
+    Elf_Word sh_info;
+    // Section alignment
+    Elf_Xword sh_addralign;
+    // Entry size if section holds table
+    Elf_Xword sh_entsize;
 };
 
 // Segment header
 struct Elf32_Phdr
 {
-    Elf_Word   p_type;
-    Elf32_Off  p_offset;
+    // Segment type
+    Elf_Word p_type;
+    // Segment file offset
+    Elf32_Off p_offset;
+    // Segment virtual address at execution
     Elf32_Addr p_vaddr;
+    // Segment physical address
     Elf32_Addr p_paddr;
-    Elf_Word   p_filesz;
-    Elf_Word   p_memsz;
-    Elf_Word   p_flags;
-    Elf_Word   p_align;
+    // Segment size in file
+    Elf_Word p_filesz;
+    // Segment size in memory
+    Elf_Word p_memsz;
+    // Segment flags
+    Elf_Word p_flags;
+    // Segment alignment
+    Elf_Word p_align;
 };
 
 struct Elf64_Phdr
 {
-    Elf_Word   p_type;
-    Elf_Word   p_flags;
-    Elf64_Off  p_offset;
+    // Segment type
+    Elf_Word p_type;
+    // Segment flags
+    Elf_Word p_flags;
+    // Segment file offset
+    Elf64_Off p_offset;
+    // Segment virtual address at execution
     Elf64_Addr p_vaddr;
+    // Segment physical address
     Elf64_Addr p_paddr;
-    Elf_Xword  p_filesz;
-    Elf_Xword  p_memsz;
-    Elf_Xword  p_align;
+    // Segment size in file
+    Elf_Xword p_filesz;
+    // Segment size in memory
+    Elf_Xword p_memsz;
+    // Segment alignment
+    Elf_Xword p_align;
 };
 
 // Symbol table entry
 struct Elf32_Sym
 {
-    Elf_Word      st_name;
-    Elf32_Addr    st_value;
-    Elf_Word      st_size;
+    // Symbol name (string table index)
+    Elf_Word st_name;
+    // Symbol value
+    Elf32_Addr st_value;
+    // Symbol size
+    Elf_Word st_size;
+    // Symbol type and binding attributes
     unsigned char st_info;
+    // Symbol visibility
     unsigned char st_other;
-    Elf_Half      st_shndx;
+    // Section index
+    Elf_Half st_shndx;
 };
 
 struct Elf64_Sym
 {
-    Elf_Word      st_name;
+    // Symbol name (string table index)
+    Elf_Word st_name;
+    // Symbol type and binding attributes
     unsigned char st_info;
+    // Symbol visibility
     unsigned char st_other;
-    Elf_Half      st_shndx;
-    Elf64_Addr    st_value;
-    Elf_Xword     st_size;
+    // Section index
+    Elf_Half st_shndx;
+    // Symbol value
+    Elf64_Addr st_value;
+    // Symbol size
+    Elf_Xword st_size;
 };
 
 #define ELF_ST_BIND( i )    ( ( i ) >> 4 )
@@ -1299,27 +1375,37 @@ struct Elf64_Sym
 // Relocation entries
 struct Elf32_Rel
 {
+    // Location to apply the relocation action
     Elf32_Addr r_offset;
-    Elf_Word   r_info;
+    // Relocation type and symbol index
+    Elf_Word r_info;
 };
 
 struct Elf32_Rela
 {
+    // Location to apply the relocation action
     Elf32_Addr r_offset;
-    Elf_Word   r_info;
-    Elf_Sword  r_addend;
+    // Relocation type and symbol index
+    Elf_Word r_info;
+    // Constant addend used to compute the value
+    Elf_Sword r_addend;
 };
 
 struct Elf64_Rel
 {
+    // Location to apply the relocation action
     Elf64_Addr r_offset;
-    Elf_Xword  r_info;
+    // Relocation type and symbol index
+    Elf_Xword r_info;
 };
 
 struct Elf64_Rela
 {
+    // Location to apply the relocation action
     Elf64_Addr r_offset;
-    Elf_Xword  r_info;
+    // Relocation type and symbol index
+    Elf_Xword r_info;
+    // Constant addend used to compute the value
     Elf_Sxword r_addend;
 };
 
@@ -1330,42 +1416,84 @@ struct Elf64_Rela
 #define ELF64_R_SYM( i )  ( ( i ) >> 32 )
 #define ELF64_R_TYPE( i ) ( ( i ) & 0xffffffffL )
 #define ELF64_R_INFO( s, t ) \
-    ( ( ( (int64_t)( s ) ) << 32 ) + ( ( t ) & 0xffffffffL ) )
+    ( ( ( ( std::int64_t )( s ) ) << 32 ) + ( ( t ) & 0xffffffffL ) )
 
 // Dynamic structure
 struct Elf32_Dyn
 {
+    // Dynamic entry type
     Elf_Sword d_tag;
     union {
-        Elf_Word   d_val;
+        // Integer value
+        Elf_Word d_val;
+        // Address value
         Elf32_Addr d_ptr;
     } d_un;
 };
 
 struct Elf64_Dyn
 {
+    // Dynamic entry type
     Elf_Sxword d_tag;
     union {
-        Elf_Xword  d_val;
+        // Integer value
+        Elf_Xword d_val;
+        // Address value
         Elf64_Addr d_ptr;
     } d_un;
 };
 
+struct Elfxx_Verdef
+{
+    // Version revision
+    Elf_Half vd_version;
+    // Version information flags
+    Elf_Half vd_flags;
+    // Version index
+    Elf_Half vd_ndx;
+    // Number of associated aux entries
+    Elf_Half vd_cnt;
+    // Version name hash value
+    Elf_Word vd_hash;
+    // Offset to verdaux array
+    Elf_Word vd_aux;
+    // Offset to next verdef entry
+    Elf_Word vd_next;
+};
+
+struct Elfxx_Verdaux
+{
+    // Version or dependency name
+    Elf_Word vda_name;
+    // Offset to next verdaux entry
+    Elf_Word vda_next;
+};
+
 struct Elfxx_Verneed
 {
+    // Version of structure
     Elf_Half vn_version;
+    // Number of associated aux entries
     Elf_Half vn_cnt;
+    // Offset to file name string
     Elf_Word vn_file;
+    // Offset to vernaux array
     Elf_Word vn_aux;
+    // Offset to next verneed entry
     Elf_Word vn_next;
 };
 
 struct Elfxx_Vernaux
 {
+    // Hash value of dependency name
     Elf_Word vna_hash;
+    // Dependency information flags
     Elf_Half vna_flags;
+    // Dependency index
     Elf_Half vna_other;
+    // Dependency name string offset
     Elf_Word vna_name;
+    // Offset to next vernaux entry
     Elf_Word vna_next;
 };
 
@@ -1385,35 +1513,46 @@ struct Elfxx_Vernaux
 // The main purpose is also for ELF injectors.
 struct Elf32_auxv
 {
-    uint32_t a_type; // Entry type
+    // Entry type
+    std::uint32_t a_type; // Entry type
 
     union {
-        uint32_t a_val; // Integer value, usually a pointer
+        // Integer value, usually a pointer
+        std::uint32_t a_val; // Integer value, usually a pointer
     } a_un;
 };
 
 struct Elf64_auxv
 {
-    uint64_t a_type; // Entry type
+    // Entry type
+    std::uint64_t a_type; // Entry type
 
     union {
-        uint64_t a_val; // Integer value, usually a pointer
+        // Integer value, usually a pointer
+        std::uint64_t a_val; // Integer value, usually a pointer
     } a_un;
 };
 
 struct Elf32_Chdr
 {
+    // The compression algorithm used
     Elf32_Word ch_type; // The compression algorithm used
+    // The size, in	bytes, of the uncompressed section data
     Elf32_Word ch_size; //The size, in	bytes, of the uncompressed section data
+    // The address alignment of the	uncompressed section data
     Elf32_Word
         ch_addralign; // The address alignment of the	uncompressed section data
 };
 
 struct Elf64_Chdr
 {
-    Elf64_Word ch_type;     //The compression algorithm used
+    //The compression algorithm used
+    Elf64_Word ch_type; //The compression algorithm used
+    // Reserved
     Elf64_Word ch_reserved; // Reserved
-    Elf_Xword  ch_size; //The size, in	bytes, of the uncompressed section data
+    //The size, in	bytes, of the uncompressed section data
+    Elf_Xword ch_size; //The size, in	bytes, of the uncompressed section data
+    //The address alignment of the	uncompressed section data
     Elf_Xword
         ch_addralign; //The address alignment of the	uncompressed section data
 };
